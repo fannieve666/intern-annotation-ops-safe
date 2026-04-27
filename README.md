@@ -1,5 +1,18 @@
 # Intern Annotation Ops Safe
 
+A public-safe toolkit for turning annotation intern operations into a structured, reusable workflow.
+
+This project packages a real-world annotation management process into a shareable open-source artifact, covering candidate screening, interview evaluation, trial annotation review, training coordination, scoring, filtering, and annotator profiling. It is designed for portfolio presentation, interview demos, and public GitHub sharing, while keeping all examples anonymized and safe for open distribution.
+
+## Highlights
+
+- Modular workflow covering the full annotator lifecycle
+- Rule-based evaluation for screening, trial review, and scoring
+- Public-safe design with anonymized names, links, and examples
+- Reusable skill definition, examples, and usage guide
+- Suitable as a foundation for prompts, agents, frontend demos, or workflow automation
+# Intern Annotation Ops Safe
+
 一个面向面试演示、GitHub 展示和脱敏分享的公开版项目。
 
 它把“招聘、面试、试标、培训、评分、筛选、画像更新”这条原本偏人工、偏经验的流程，整理成一套可复用的安全版 Skill 资产。
