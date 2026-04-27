@@ -1,0 +1,225 @@
+name: intern-annotation-ops-safe
+version: "1.0"
+license: MIT
+visibility: public-demo-safe
+summary: >
+  面向面试演示、GitHub 展示和脱敏分享的标注实习生全生命周期管理 Skill。
+  覆盖招聘、面试、试标、培训、评分、筛选、画像更新等场景。
+
+design_goals:
+  - 把复杂业务流程拆成可执行模块
+  - 把经验规则沉淀成结构化定义
+  - 让公开分享版本保持完整逻辑但不暴露敏感信息
+
+sanitization_rules:
+  people_name_format: "标注员01 / ANN-001"
+  coordinator_alias: "@项目负责人"
+  output_dir: "./demo-output/"
+  url_prefix: "https://demo.example.com/"
+  forbid:
+    - 真实姓名
+    - 真实群名
+    - 真实平台地址
+    - 真实本地路径
+
+execution_policy:
+  mode: quiet
+  principles:
+    - 不为继续执行而追问确认
+    - 数据缺失时使用默认值并继续
+    - 错误优先记录并继续
+    - 优先按关键词自动路由
+
+defaults:
+  trial_pass_conflict_rate: "<30%"
+  trial_quota_per_person: 20
+  payment_rate_per_item: 0.5
+  candidate_weights:
+    education: 30
+    experience: 40
+    availability: 30
+  interview_pass_score: 60
+  scoring_formula:
+    quality: "50%"
+    quantity: "30%"
+    timeliness: "20%"
+
+routes:
+  - trigger: ["发任务", "发布任务", "新任务"]
+    module: task-init
+  - trigger: ["检查状态", "进度查看"]
+    module: status-check
+  - trigger: ["催进度", "未完成", "催一下"]
+    module: nudge-reminder
+  - trigger: ["汇总结果", "结果同步"]
+    module: result-sync
+  - trigger: ["结算说明", "结算", "算钱"]
+    module: payment-note
+  - trigger: ["筛选候选人", "筛简历"]
+    module: candidate-screen
+  - trigger: ["面试评价", "面试反馈", "面试打分"]
+    module: interview-eval
+  - trigger: ["试标注筛选", "试标筛选"]
+    module: trial-filter
+  - trigger: ["入场通知", "正式标注通知"]
+    module: onboard-notice
+  - trigger: ["培训通知", "标准拉齐", "校准通知"]
+    module: training-notice
+  - trigger: ["月度汇总", "月报"]
+    module: monthly-report
+  - trigger: ["评分", "标注者评分", "算分"]
+    module: scoring-engine
+  - trigger: ["自动筛选", "自动筛人", "筛掉谁"]
+    module: auto-filter-and-notify
+  - trigger: ["人员画像", "更新画像", "优化JD", "筛选策略"]
+    module: annotator-profile
+
+modules:
+  task-init:
+    purpose: 生成公开版任务通知
+    required_inputs: [task_description]
+    optional_inputs: [assignee_list, deadline, quota]
+    output: text-notification
+
+  status-check:
+    purpose: 汇总当前任务进度
+    required_inputs: [annotators, done_count, quota]
+    output: markdown-table
+
+  nudge-reminder:
+    purpose: 对未完成人员做温和提醒
+    required_inputs: [lagging_annotators]
+    output: text-notification
+
+  result-sync:
+    purpose: 汇总试标或阶段性结果
+    required_inputs: [annotator_stats]
+    output: markdown-report
+
+  payment-note:
+    purpose: 生成结算说明
+    required_inputs: [period, valid_item_count, rate]
+    output: markdown-report
+
+  candidate-screen:
+    purpose: 基于学历、经验、可投入时间做候选人分层
+    scoring:
+      education:
+        本科: 18
+        硕士: 24
+        博士: 30
+      experience:
+        音乐标注: 40
+        通用标注: 24
+        无经验: 8
+      availability:
+        ">=20h": 30
+        "10~20h": 20
+        "<10h": 10
+    levels:
+      A: ">=75"
+      B: "50~74"
+      C: "<50"
+    output: markdown-report
+
+  interview-eval:
+    purpose: 输出结构化面试评价
+    dimensions:
+      音乐感知力: 35
+      理解标注标准能力: 30
+      认真度与可靠性: 20
+      沟通协作: 15
+    pass_score: 60
+    output: markdown-report
+
+  trial-filter:
+    purpose: 基于冲突率做试标筛选
+    rules:
+      effective_conflict: "纯冲突数 + 混合极性数 * 0.5"
+      conflict_rate: "有效冲突数 / 总条数"
+    levels:
+      A: "<15%"
+      B: "15%~30%"
+      C: ">30%"
+    required_fields:
+      - annotator
+      - rule_type
+      - has_mixed_polarity
+      - dimension
+      - score
+    output: markdown-report
+
+  onboard-notice:
+    purpose: 生成正式标注入场通知
+    output: text-notification
+
+  training-notice:
+    purpose: 生成培训或标准拉齐通知
+    default_topics:
+      - 词分一致性
+      - 混合极性处理
+      - 分数档位校准
+    output: text-notification
+
+  monthly-report:
+    purpose: 汇总月度工作量、评分和画像更新
+    steps:
+      - 汇总工作量
+      - 调用评分模块
+      - 更新画像
+      - 生成月报
+    output: markdown-report
+
+  scoring-engine:
+    purpose: 对标注者做综合评分
+    formula:
+      total: "质量分 + 数量分 + 及时率分"
+      quality: "(1 - 冲突率) * 50"
+      quantity: "MIN(完成条数 / 配额, 1.0) * 30"
+      timeliness: "按时提交次数 / 总提交次数 * 20"
+    grades:
+      S: ">=90"
+      A: "75~89"
+      B: "60~74"
+      C: "45~59"
+      D: "<45"
+    output: markdown-report
+
+  auto-filter-and-notify:
+    purpose: 基于综合评级做去留与通知
+    decisions:
+      S: 继续合作
+      A: 继续合作
+      B: 继续合作但重点关注
+      C: 培训警告
+      D: 停止合作
+    output: decision-and-notification
+
+  annotator-profile:
+    purpose: 输出脱敏版动态画像
+    sections:
+      - 基础背景
+      - 能力特征
+      - 行为特征
+      - 风险特征
+      - 当前优化方向
+    output: structured-profile
+
+output_style:
+  opening:
+    group: "各位同学好，"
+    direct: "Hi {姓名}，"
+  closing:
+    default: "感谢大家的配合。"
+    coordinator: "CC：@项目负责人"
+  tone_rules:
+    - 可以提醒和说明后果，但不要攻击性表达
+    - 不直接使用“淘汰”“开除”“不合格”
+    - 优先使用递进式、可接受的业务表达
+
+error_handling:
+  missing_field: "跳过该字段并注明"
+  empty_list: "输出占位符"
+  invalid_date: "回退为当天日期"
+  nan_or_divide_by_zero: "输出 0 并标注数据不足"
+  empty_threshold: "回退默认值"
